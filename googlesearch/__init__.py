@@ -32,6 +32,7 @@ import random
 import sys
 import time
 import ssl
+import requests
 
 if sys.version_info[0] > 2:
     from http.cookiejar import LWPCookieJar
@@ -87,6 +88,8 @@ if not home_folder:
     if not home_folder:
         home_folder = '.'   # Use the current folder on error.
 cookie_jar = LWPCookieJar(os.path.join(home_folder, '.google-cookie'))
+session = requests.session()
+session.cookies = cookie_jar
 try:
     cookie_jar.load()
 except Exception:
@@ -148,7 +151,7 @@ def get_tbs(from_date, to_date):
 
 # Request the given URL and return the response page, using the cookie jar.
 # If the cookie jar is inaccessible, the errors are ignored.
-def get_page(url, user_agent=None, verify_ssl=True):
+def get_page(url, proxies={}, user_agent=None, verify_ssl=True):
     """
     Request the given URL and return the response page, using the cookie jar.
 
@@ -167,17 +170,8 @@ def get_page(url, user_agent=None, verify_ssl=True):
     """
     if user_agent is None:
         user_agent = USER_AGENT
-    request = Request(url)
-    request.add_header('User-Agent', user_agent)
-    cookie_jar.add_cookie_header(request)
-    if verify_ssl:
-        response = urlopen(request)
-    else:
-        context = ssl._create_unverified_context()
-        response = urlopen(request, context=context)
-    cookie_jar.extract_cookies(response, request)
-    html = response.read()
-    response.close()
+    response = session.get(url, proxies=proxies, headers={'User-Agent': user_agent}, timeout=10)
+    html = response.content
     try:
         cookie_jar.save()
     except Exception:
@@ -208,7 +202,7 @@ def filter_result(link):
 
 
 # Returns a generator that yields URLs.
-def search(query, tld='com', lang='en', tbs='0', safe='off', num=10, start=0,
+def search(query, tld='com', lang='en', tbs='0', safe='off', num=10, start=0,proxies={},
            stop=None, pause=2.0, country='', extra_params=None,
            user_agent=None, verify_ssl=True):
     """
@@ -269,7 +263,7 @@ def search(query, tld='com', lang='en', tbs='0', safe='off', num=10, start=0,
             )
 
     # Grab the cookie from the home page.
-    get_page(url_home % vars(), user_agent, verify_ssl)
+    get_page(url_home % vars(), proxies, user_agent, verify_ssl)
 
     # Prepare the URL of the first request.
     if start:
@@ -302,7 +296,7 @@ def search(query, tld='com', lang='en', tbs='0', safe='off', num=10, start=0,
         time.sleep(pause)
 
         # Request the Google Search results page.
-        html = get_page(url, user_agent, verify_ssl)
+        html = get_page(url, proxies, user_agent, verify_ssl)
 
         # Parse the response and get every anchored URL.
         if is_bs4:
