@@ -170,7 +170,7 @@ def get_page(url, proxies={}, user_agent=None, verify_ssl=True):
     """
     if user_agent is None:
         user_agent = USER_AGENT
-    response = session.get(url, proxies=proxies, headers={'User-Agent': user_agent}, timeout=10)
+    response = session.get(url, proxies=proxies, headers={'User-Agent': user_agent}, timeout=10, verify=verify_ssl)
     html = response.content
     try:
         cookie_jar.save()
@@ -333,9 +333,11 @@ def search(query, tld='com', lang='en', tbs='0', safe='off', num=10, start=0,pro
             if h in hashes:
                 continue
             hashes.add(h)
+            span = a.find('span')
+            # print(span.text)
 
             # Yield the result.
-            yield link
+            yield link,span.text
 
             # Increase the results counter.
             # If we reached the limit, stop.

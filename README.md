@@ -11,8 +11,8 @@ Usage example
     # Get the first 20 hits for: "Breaking Code" WordPress blog
     from googlesearch import search
     proxies={'https': 'socks5://127.0.0.1:1080', 'http': 'socks5://127.0.0.1:1080'}
-    for url in search('"Breaking Code" WordPress blog', proxies=proxies, stop=20):
-        print(url)
+    for url,title in search('"Breaking Code" WordPress blog', proxies=proxies, stop=20):
+        print(title, url)
 
 Installing
 ----------
